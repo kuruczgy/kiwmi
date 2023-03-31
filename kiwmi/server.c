@@ -23,12 +23,15 @@
 #include <wlr/types/wlr_viewporter.h>
 #include <wlr/util/log.h>
 
+#include "desktop/lock.h"
 #include "luak/luak.h"
 
 bool
 server_init(struct kiwmi_server *server, char *config_path)
 {
     wlr_log(WLR_DEBUG, "Initializing Wayland server");
+    
+    server->session_lock.lock = NULL;
 
     server->wl_display = wl_display_create();
     if (!server->wl_display) {
@@ -69,6 +72,8 @@ server_init(struct kiwmi_server *server, char *config_path)
     wlr_gamma_control_manager_v1_create(server->wl_display);
     wlr_primary_selection_v1_device_manager_create(server->wl_display);
     wlr_viewporter_create(server->wl_display);
+
+    session_lock_init(server);
 
     server->socket = wl_display_add_socket_auto(server->wl_display);
     if (!server->socket) {

@@ -10,6 +10,7 @@ kiwmi_sources = files(
   'desktop/stratum.c',
   'desktop/view.c',
   'desktop/xdg_shell.c',
+  'desktop/lock.c',
   'input/cursor.c',
   'input/input.c',
   'input/keyboard.c',

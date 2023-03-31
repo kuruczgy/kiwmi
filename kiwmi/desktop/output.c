@@ -25,6 +25,7 @@
 
 #include "desktop/desktop.h"
 #include "desktop/layer_shell.h"
+#include "desktop/lock.h"
 #include "desktop/view.h"
 #include "input/cursor.h"
 #include "input/input.h"
@@ -205,6 +206,10 @@ new_output_notify(struct wl_listener *listener, void *data)
     wl_signal_init(&output->events.destroy);
     wl_signal_init(&output->events.resize);
     wl_signal_init(&output->events.usable_area_change);
+
+    if (server->session_lock.lock) {
+        session_lock_add_output(server->session_lock.lock, output);
+    }
 
     wlr_output_layout_add_auto(desktop->output_layout, wlr_output);
 

@@ -73,6 +73,11 @@ keyboard_key_notify(struct wl_listener *listener, void *data)
     int translated_syms_len = xkb_state_key_get_syms(
         wlr_keyboard->xkb_state, keycode, &translated_syms);
 
+    // TODO: probably don't need both of these conditions, exclusive_client is
+    // only used by the session lock.
+    bool input_inhibited = server->input.seat->exclusive_client != NULL
+        || server->session_lock.lock;
+
     bool handled = false;
 
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
@@ -80,7 +85,7 @@ keyboard_key_notify(struct wl_listener *listener, void *data)
             switch_vt(translated_syms, translated_syms_len, server->backend);
     }
 
-    if (!handled) {
+    if (!handled && !input_inhibited) {
         struct kiwmi_keyboard_key_event data = {
             .raw_syms            = raw_syms,
             .translated_syms     = translated_syms,

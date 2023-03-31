@@ -94,6 +94,33 @@ seat_focus_view(struct kiwmi_seat *seat, struct kiwmi_view *view)
     seat_focus_surface(seat, view->wlr_surface);
 }
 
+void
+seat_set_exclusive_client(struct kiwmi_seat *seat, struct wl_client *client)
+{
+    if (!client) {
+        seat->exclusive_client = NULL;
+        // TODO: refocus something else
+    }
+    if (seat->focused_layer) {
+        if (wl_resource_get_client(seat->focused_layer->layer_surface->resource)
+            != client) {
+            seat_focus_layer(seat, NULL);
+        }
+    }
+    if (seat->focused_view) {
+        if (wl_resource_get_client(seat->focused_view->wlr_surface->resource)
+            != client) {
+            seat_focus_view(seat, NULL);
+        }
+    }
+    if (seat->seat->pointer_state.focused_client) {
+        if (seat->seat->pointer_state.focused_client->client != client) {
+            wlr_seat_pointer_notify_clear_focus(seat->seat);
+        }
+    }
+    // TODO: what about clearing keyboard focus? I guess it's handled by the previous steps?
+}
+
 static void
 request_set_cursor_notify(struct wl_listener *listener, void *data)
 {
@@ -152,8 +179,9 @@ seat_create(struct kiwmi_input *input)
     seat->input = input;
     seat->seat  = wlr_seat_create(server->wl_display, "seat-0");
 
-    seat->focused_view  = NULL;
-    seat->focused_layer = NULL;
+    seat->focused_view     = NULL;
+    seat->focused_layer    = NULL;
+    seat->exclusive_client = NULL;
 
     seat->request_set_cursor.notify = request_set_cursor_notify;
     wl_signal_add(

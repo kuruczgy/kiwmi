@@ -29,6 +29,14 @@ struct kiwmi_server {
     struct {
         struct wl_signal destroy;
     } events;
+
+    struct {
+        struct session_lock *lock;
+        struct wlr_session_lock_manager_v1 *manager;
+
+        struct wl_listener new_lock;
+        struct wl_listener manager_destroy;
+    } session_lock;
 };
 
 bool server_init(struct kiwmi_server *server, char *config_path);
