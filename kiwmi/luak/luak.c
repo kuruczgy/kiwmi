@@ -23,6 +23,7 @@
 #include "luak/kiwmi_server.h"
 #include "luak/kiwmi_view.h"
 
+// isn't this just the same as luaL_checkudata ?
 void *
 luaK_toudata(lua_State *L, int ud, const char *tname)
 {
