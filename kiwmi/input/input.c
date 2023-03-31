@@ -7,10 +7,12 @@
 
 #include "input/input.h"
 
+#include <libinput.h>
 #include <stdlib.h>
 
 #include <wayland-server.h>
 #include <wlr/backend.h>
+#include <wlr/backend/libinput.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_seat.h>
@@ -71,6 +73,14 @@ new_input_notify(struct wl_listener *listener, void *data)
     default:
         // NOT HANDLED
         break;
+    }
+
+    if (wlr_input_device_is_libinput(device)) {
+        struct libinput_device *libinput_device =
+            wlr_libinput_get_device_handle(device);
+        if (libinput_device_config_accel_is_available(libinput_device)) {
+            libinput_device_config_accel_set_speed(libinput_device, -0.9);
+        }
     }
 
     uint32_t caps = WL_SEAT_CAPABILITY_POINTER;

@@ -1,0 +1,8 @@
+gui toplevel manager
+
+reorder workspaces
+hide workspaces
+workspace show top k views
+
+fullscreen mode
+

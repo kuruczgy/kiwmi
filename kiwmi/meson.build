@@ -36,6 +36,7 @@ kiwmi_deps = [
   wayland_server,
   wlroots,
   xkbcommon,
+  libinput,
   cairo,
   pango,
   pangocairo,

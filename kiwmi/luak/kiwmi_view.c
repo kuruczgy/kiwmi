@@ -160,7 +160,7 @@ l_kiwmi_view_id(lua_State *L)
 
     struct kiwmi_view *view = obj->object;
 
-    lua_pushnumber(L, (lua_Number)(size_t)view);
+    lua_pushinteger(L, (lua_Integer)(size_t)view);
 
     return 1;
 }
