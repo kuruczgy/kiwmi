@@ -63,6 +63,8 @@ struct kiwmi_view {
     } events;
 
     struct kiwmi_xdg_decoration *decoration;
+
+    struct text_node *debug_text;
 };
 
 struct kiwmi_view_impl {

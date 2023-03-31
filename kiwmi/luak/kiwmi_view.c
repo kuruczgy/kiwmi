@@ -24,6 +24,7 @@
 #include "luak/kiwmi_output.h"
 #include "luak/kiwmi_scene_tree.h"
 #include "server.h"
+#include "text_buffer.h"
 
 static int
 l_kiwmi_view_app_id(lua_State *L)
@@ -431,6 +432,25 @@ l_kiwmi_view_title(lua_State *L)
 }
 
 static int
+l_kiwmi_view_set_debug_text(lua_State *L)
+{
+    struct kiwmi_object *obj =
+        *(struct kiwmi_object **)luaL_checkudata(L, 1, "kiwmi_view");
+
+    if (!obj->valid) {
+        return luaL_error(L, "kiwmi_view no longer valid");
+    }
+
+    struct kiwmi_view *view = obj->object;
+
+    const char *string = luaL_checkstring(L, 2);
+
+    text_node_set_text(view->debug_text, string);
+
+    return 0;
+}
+
+static int
 scene_tree(lua_State *L)
 {
     struct kiwmi_object *obj =
@@ -472,6 +492,7 @@ static const luaL_Reg kiwmi_view_methods[] = {
     {"size", l_kiwmi_view_size},
     {"tiled", l_kiwmi_view_tiled},
     {"title", l_kiwmi_view_title},
+    {"set_debug_text", l_kiwmi_view_set_debug_text},
     {"scene_tree", scene_tree},
     {NULL, NULL},
 };

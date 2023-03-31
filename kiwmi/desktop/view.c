@@ -16,6 +16,7 @@
 #include "input/cursor.h"
 #include "input/seat.h"
 #include "server.h"
+#include "text_buffer.h"
 
 void
 view_close(struct kiwmi_view *view)
@@ -227,6 +228,8 @@ view_create(
     enum kiwmi_view_type type,
     const struct kiwmi_view_impl *impl)
 {
+    struct kiwmi_server *server = wl_container_of(desktop, server, desktop);
+
     struct kiwmi_view *view = malloc(sizeof(*view));
     if (!view) {
         wlr_log(WLR_ERROR, "Failed to allocate view");
@@ -259,6 +262,13 @@ view_create(
 
     wlr_scene_node_set_position(&view->desktop_surface.tree->node, 0, 0);
     wlr_scene_node_set_position(&view->desktop_surface.popups_tree->node, 0, 0);
+
+    view->debug_text = text_node_create(
+        view->desktop_surface.popups_tree,
+        server->font_description,
+        "",
+        (float[]){1, 0, 0, 1},
+        true);
 
     return view;
 }
