@@ -144,6 +144,48 @@ l_kiwmi_output_usable_area(lua_State *L)
     return 1;
 }
 
+static int
+set_transform(lua_State *L)
+{
+    struct kiwmi_object *obj =
+        *(struct kiwmi_object **)luaL_checkudata(L, 1, "kiwmi_output");
+    luaL_checktype(L, 2, LUA_TNUMBER); // rotation
+
+    if (!obj->valid) {
+        return luaL_error(L, "kiwmi_output no longer valid");
+    }
+
+    struct kiwmi_output *output = obj->object;
+
+    lua_Integer rotation = lua_tointeger(L, 2);
+    bool flipped         = lua_toboolean(L, 3);
+
+    enum wl_output_transform transform;
+    switch (rotation) {
+    case 0:
+        transform = WL_OUTPUT_TRANSFORM_NORMAL;
+        break;
+    case 90:
+        transform = WL_OUTPUT_TRANSFORM_90;
+        break;
+    case 180:
+        transform = WL_OUTPUT_TRANSFORM_180;
+        break;
+    case 270:
+        transform = WL_OUTPUT_TRANSFORM_270;
+        break;
+    default:
+        return luaL_error(L, "invalid rotation");
+    }
+
+    transform += 4 * flipped;
+
+    wlr_output_set_transform(output->wlr_output, transform);
+    wlr_output_commit(output->wlr_output);
+
+    return 0;
+}
+
 static const luaL_Reg kiwmi_output_methods[] = {
     {"auto", l_kiwmi_output_auto},
     {"move", l_kiwmi_output_move},
@@ -152,6 +194,7 @@ static const luaL_Reg kiwmi_output_methods[] = {
     {"pos", l_kiwmi_output_pos},
     {"size", l_kiwmi_output_size},
     {"usable_area", l_kiwmi_output_usable_area},
+    {"set_transform", set_transform},
     {NULL, NULL},
 };
 
