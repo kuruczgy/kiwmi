@@ -20,6 +20,8 @@ struct kiwmi_lua {
     int objects;
     struct wl_list scheduled_callbacks;
     struct wl_global *global;
+
+    struct kiwmi_server *server;
 };
 
 struct kiwmi_object {

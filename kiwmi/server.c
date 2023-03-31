@@ -25,6 +25,7 @@
 
 #include "desktop/lock.h"
 #include "luak/luak.h"
+#include "pango/pango-font.h"
 
 bool
 server_init(struct kiwmi_server *server, char *config_path)
@@ -32,6 +33,9 @@ server_init(struct kiwmi_server *server, char *config_path)
     wlr_log(WLR_DEBUG, "Initializing Wayland server");
     
     server->session_lock.lock = NULL;
+
+    server->font_description =
+        pango_font_description_from_string("monospace 15");
 
     server->wl_display = wl_display_create();
     if (!server->wl_display) {
@@ -157,4 +161,6 @@ server_fini(struct kiwmi_server *server)
     luaK_destroy(server->lua);
 
     free(server->config_path);
+
+    pango_font_description_free(server->font_description);
 }

@@ -2,6 +2,7 @@ kiwmi_sources = files(
   'main.c',
   'server.c',
   'color.c',
+  'text_buffer.c',
   'desktop/desktop.c',
   'desktop/desktop_surface.c',
   'desktop/layer_shell.c',
@@ -23,6 +24,8 @@ kiwmi_sources = files(
   'luak/kiwmi_output.c',
   'luak/kiwmi_server.c',
   'luak/kiwmi_view.c',
+  'luak/kiwmi_scene_tree.c',
+  'luak/kiwmi_scene_node.c',
   'luak/luak.c',
 )
 
@@ -33,6 +36,9 @@ kiwmi_deps = [
   wayland_server,
   wlroots,
   xkbcommon,
+  cairo,
+  pango,
+  pangocairo,
 ]
 
 executable(

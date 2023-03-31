@@ -12,6 +12,7 @@
 
 #include "desktop/desktop.h"
 #include "input/input.h"
+#include <pango/pango-font.h>
 
 struct kiwmi_server {
     struct wl_display *wl_display;
@@ -25,6 +26,8 @@ struct kiwmi_server {
     struct kiwmi_lua *lua;
     struct kiwmi_desktop desktop;
     struct kiwmi_input input;
+
+    PangoFontDescription *font_description;
 
     struct {
         struct wl_signal destroy;

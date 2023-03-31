@@ -22,6 +22,7 @@
 #include "input/seat.h"
 #include "luak/kiwmi_lua_callback.h"
 #include "luak/kiwmi_output.h"
+#include "luak/kiwmi_scene_tree.h"
 #include "server.h"
 
 static int
@@ -429,6 +430,29 @@ l_kiwmi_view_title(lua_State *L)
     return 1;
 }
 
+static int
+scene_tree(lua_State *L)
+{
+    struct kiwmi_object *obj =
+        *(struct kiwmi_object **)luaL_checkudata(L, 1, "kiwmi_view");
+
+    if (!obj->valid) {
+        return luaL_error(L, "kiwmi_view no longer valid");
+    }
+
+    struct kiwmi_view *view = obj->object;
+
+    lua_pushcfunction(L, luaK_kiwmi_scene_tree_new);
+    lua_pushlightuserdata(L, obj->lua);
+    lua_pushlightuserdata(L, view->desktop_surface.tree);
+    if (lua_pcall(L, 2, 1, 0)) {
+        wlr_log(WLR_ERROR, "%s", lua_tostring(L, -1));
+        return 0;
+    }
+
+    return 1;
+}
+
 static const luaL_Reg kiwmi_view_methods[] = {
     {"app_id", l_kiwmi_view_app_id},
     {"close", l_kiwmi_view_close},
@@ -448,6 +472,7 @@ static const luaL_Reg kiwmi_view_methods[] = {
     {"size", l_kiwmi_view_size},
     {"tiled", l_kiwmi_view_tiled},
     {"title", l_kiwmi_view_title},
+    {"scene_tree", scene_tree},
     {NULL, NULL},
 };
 

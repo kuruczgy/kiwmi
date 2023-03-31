@@ -18,6 +18,8 @@
 #include "luak/kiwmi_keyboard.h"
 #include "luak/kiwmi_lua_callback.h"
 #include "luak/kiwmi_output.h"
+#include "luak/kiwmi_scene_node.h"
+#include "luak/kiwmi_scene_tree.h"
 #include "luak/kiwmi_server.h"
 #include "luak/kiwmi_view.h"
 
@@ -197,6 +199,8 @@ luaK_create(struct kiwmi_server *server)
         return NULL;
     }
 
+    lua->server = server;
+
     lua_State *L = luaL_newstate();
     if (!L) {
         free(lua);
@@ -225,6 +229,10 @@ luaK_create(struct kiwmi_server *server)
     lua_pushcfunction(L, luaK_kiwmi_server_register);
     error |= lua_pcall(L, 0, 0, 0);
     lua_pushcfunction(L, luaK_kiwmi_view_register);
+    error |= lua_pcall(L, 0, 0, 0);
+    lua_pushcfunction(L, luaK_kiwmi_scene_tree_register);
+    error |= lua_pcall(L, 0, 0, 0);
+    lua_pushcfunction(L, luaK_kiwmi_scene_node_register);
     error |= lua_pcall(L, 0, 0, 0);
 
     if (error) {

@@ -16,6 +16,8 @@ add_project_arguments(
   language: 'c',
 )
 
+add_project_link_arguments('-lm', language : 'c')
+
 git               = find_program('git', required: false)
 lua               = dependency(get_option('lua-pkg'))
 pixman            = dependency('pixman-1')
@@ -25,6 +27,9 @@ wayland_scanner   = dependency('wayland-scanner')
 wayland_server    = dependency('wayland-server')
 wlroots           = dependency('wlroots')
 xkbcommon         = dependency('xkbcommon')
+cairo = dependency('cairo')
+pango = dependency('pango')
+pangocairo = dependency('pangocairo')
 
 include = include_directories('include')
 
