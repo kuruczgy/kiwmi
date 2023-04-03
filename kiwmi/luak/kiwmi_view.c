@@ -7,6 +7,7 @@
 
 #include "luak/kiwmi_view.h"
 
+#include <assert.h>
 #include <string.h>
 
 #include <lauxlib.h>
@@ -160,7 +161,16 @@ l_kiwmi_view_id(lua_State *L)
 
     struct kiwmi_view *view = obj->object;
 
-    lua_pushinteger(L, (lua_Integer)(size_t)view);
+    // We are going to cram a pointer into a IEEE 754 float.
+    // It can represent integers up to 2^53 (https://stackoverflow.com/a/12445693)
+    // Fortunately, today 64 bit addresses are not truly 64, but rather just 48:
+    // https://en.wikipedia.org/wiki/X86-64#Virtual_address_space_details
+    // We even have 5 bits to spare :)
+    // (Plus we could get at least 3 at the bottom if we wanted since a 64 bit
+    // pointer should be 8 aligned.)
+    size_t id = (size_t)view;
+    assert(id < (1ULL << 49));
+    lua_pushinteger(L, (lua_Integer)id);
 
     return 1;
 }

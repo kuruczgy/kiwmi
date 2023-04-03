@@ -12,6 +12,7 @@
 
 #include "desktop/desktop.h"
 #include "input/input.h"
+#include "websocket.h"
 #include <pango/pango-font.h>
 
 struct kiwmi_server {
@@ -28,6 +29,7 @@ struct kiwmi_server {
     struct kiwmi_input input;
 
     PangoFontDescription *font_description;
+    struct websocket *websocket;
 
     struct {
         struct wl_signal destroy;

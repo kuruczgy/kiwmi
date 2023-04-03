@@ -7,6 +7,7 @@
 
 #include "luak/kiwmi_keyboard.h"
 
+#include <lua.h>
 #include <stdint.h>
 
 #include <lauxlib.h>
@@ -169,7 +170,7 @@ send_key_event(
     lua_pushlstring(L, keysym_name, namelen);
     lua_setfield(L, -2, "key");
 
-    lua_pushnumber(L, keycode);
+    lua_pushinteger(L, keycode);
     lua_setfield(L, -2, "keycode");
 
     lua_pushboolean(L, raw);

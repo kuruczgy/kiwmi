@@ -42,7 +42,7 @@ function Controller:handle_mod_shift_num(num)
     local view = kiwmi:focused_view()
     if view then
         local view_id = view:id()
-        self.manager:move_view_to_workspace(view_id, num)
+        self.manager:move_view_to_workspace(view_id, tostring(num))
         self.manager:arrange_views()
         return true
     end

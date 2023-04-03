@@ -9,7 +9,6 @@
 #define KIWMI_LUAK_LUAK_H
 
 #include <stdbool.h>
-
 #include <lua.h>
 #include <wayland-server.h>
 

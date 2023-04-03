@@ -26,12 +26,13 @@
 #include "desktop/lock.h"
 #include "luak/luak.h"
 #include "pango/pango-font.h"
+#include "websocket.h"
 
 bool
 server_init(struct kiwmi_server *server, char *config_path)
 {
     wlr_log(WLR_DEBUG, "Initializing Wayland server");
-    
+
     server->session_lock.lock = NULL;
 
     server->font_description =
@@ -117,6 +118,8 @@ server_init(struct kiwmi_server *server, char *config_path)
         return false;
     }
 
+    server->websocket = websocket_init(server->lua->L, server->wl_event_loop);
+
     return true;
 }
 
@@ -155,6 +158,8 @@ server_fini(struct kiwmi_server *server)
 
     desktop_fini(&server->desktop);
     input_fini(&server->input);
+
+    websocket_fini(server->websocket);
 
     wl_display_destroy(server->wl_display);
 

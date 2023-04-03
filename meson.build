@@ -31,6 +31,7 @@ libinput          = dependency('libinput')
 cairo = dependency('cairo')
 pango = dependency('pango')
 pangocairo = dependency('pangocairo')
+libwebsockets = dependency('libwebsockets')
 
 include = include_directories('include')
 

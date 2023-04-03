@@ -3,6 +3,7 @@ kiwmi_sources = files(
   'server.c',
   'color.c',
   'text_buffer.c',
+  'websocket.c',
   'desktop/desktop.c',
   'desktop/desktop_surface.c',
   'desktop/layer_shell.c',
@@ -40,6 +41,7 @@ kiwmi_deps = [
   cairo,
   pango,
   pangocairo,
+  libwebsockets,
 ]
 
 executable(

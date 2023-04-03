@@ -6,6 +6,7 @@ local mod_key = watch and "alt" or "super"
 
 local manager
 local controller
+local websocket_server
 
 local function reload()
     print("reload")
@@ -21,19 +22,24 @@ local function reload()
 
     require("manager")
     require("controller")
+    require("websocket_server")
 
     local new = {}
     new.manager = Manager()
     new.controller = Controller(new.manager, mod_key)
+    new.websocket_server = WebsocketServer(new.manager)
 
     -- try to preserve the state (this can obviously be buggy, but some special cases can be added here)
     assign(new.manager, manager or {})
     assign(new.controller, controller or {})
+    assign(new.websocket_server, websocket_server or {})
     new.controller.manager = new.manager
+    new.websocket_server.manager = new.manager
 
     manager = new.manager
     controller = new.controller
-    
+    websocket_server = new.websocket_server
+
     manager:arrange_views()
 end
 

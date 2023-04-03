@@ -65,7 +65,6 @@ for i, cfg in ipairs(config.outputs) do
     config_output_priority[cfg.name] = i
 end
 
-print("creating manager class")
 Manager = class()
 
 function Manager:ctor()
@@ -75,7 +74,7 @@ function Manager:ctor()
     self.output_info_by_name = {}
     self.output_names_ordered = {}
 
-    -- any integer is a valid workspace
+    -- any string is a valid workspace
     self.ws_by_id = {}
 
     self.focused_view_id = nil
@@ -92,7 +91,7 @@ function Manager:add_view(view)
     self.view_info_by_id[view_id] = view_info
 
     -- place into a workspace by default
-    local ws_id = self:get_populated_workspace_ids()[0] or 1
+    local ws_id = self:get_populated_workspace_ids()[0] or "1"
     self:move_view_to_workspace(view_id, ws_id)
 
     -- set up scene nodes
@@ -165,6 +164,40 @@ function Manager:move_view_to_workspace(view_id, ws_id)
     end
 
     ws.view_ids[#ws.view_ids + 1] = view_id
+end
+
+function Manager:export_layout_state()
+    local ls = {
+        workspaces = {}
+    }
+    for ws_id, ws in pairs(self.ws_by_id) do
+        local workspace = { views = {} }
+        for i, view_id in ipairs(ws.view_ids) do
+            workspace.views[i] = view_id
+        end
+        ls.workspaces[ws_id] = workspace
+    end
+    return ls
+end
+
+function Manager:import_layout_state(ls)
+    for _, view_info in pairs(self.view_info_by_id) do
+        view_info.ws_id = nil
+    end
+
+    self.ws_by_id = {}
+    for ws_id, ws in pairs(ls.workspaces) do
+        local view_ids = {}
+        for _, view_id in ipairs(ws.views) do
+            if self.view_info_by_id[view_id] then
+                self.view_info_by_id[view_id].ws_id = ws_id
+                view_ids[#view_ids + 1] = view_id
+            end
+        end
+        self.ws_by_id[ws_id] = { view_ids = view_ids }
+    end
+
+    self:arrange_views()
 end
 
 function Manager:workspace_of_view(view_id)
@@ -248,7 +281,8 @@ function Manager:arrange_views()
 
         local view_info = self.view_info_by_id[view_id]
         local view = self.view_by_id[view_id]
-        view:set_debug_text(string.format("workspace %d\noutput %d (max: %d)", view_info.ws_id or -1, output_i, l.max))
+        view:set_debug_text(string.format("workspace %s\noutput %d (max: %d)", view_info.ws_id or "(none)", output_i,
+            l.max))
     end
 
     for _, ws_id in ipairs(self:get_populated_workspace_ids()) do

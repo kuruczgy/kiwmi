@@ -7,6 +7,7 @@
 
 #include "luak/kiwmi_server.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <unistd.h>
@@ -22,12 +23,14 @@
 #include "input/cursor.h"
 #include "input/input.h"
 #include "input/seat.h"
+#include "lua.h"
 #include "luak/kiwmi_cursor.h"
 #include "luak/kiwmi_keyboard.h"
 #include "luak/kiwmi_lua_callback.h"
 #include "luak/kiwmi_output.h"
 #include "luak/kiwmi_view.h"
 #include "server.h"
+#include "websocket.h"
 
 static int
 l_kiwmi_server_active_output(lua_State *L)
@@ -326,6 +329,34 @@ l_kiwmi_server_view_at(lua_State *L)
     return 1;
 }
 
+static int
+ws_register(lua_State *L)
+{
+    struct kiwmi_object *obj =
+        *(struct kiwmi_object **)luaL_checkudata(L, 1, "kiwmi_server");
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    int connect_ref = LUA_NOREF, recv_ref = LUA_NOREF, close_ref = LUA_NOREF;
+
+    lua_getfield(L, 2, "connect");
+    if (lua_type(L, -1) != LUA_TNIL) {
+        connect_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    lua_getfield(L, 2, "recv");
+    if (lua_type(L, -1) != LUA_TNIL) {
+        recv_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    lua_getfield(L, 2, "close");
+    if (lua_type(L, -1) != LUA_TNIL) {
+        close_ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+
+    websocket_register_callbacks(
+        obj->lua->server->websocket, connect_ref, recv_ref, close_ref);
+
+    return 0;
+}
+
 static const luaL_Reg kiwmi_server_methods[] = {
     {"active_output", l_kiwmi_server_active_output},
     {"bg_color", l_kiwmi_server_bg_color},
@@ -341,6 +372,8 @@ static const luaL_Reg kiwmi_server_methods[] = {
     {"unfocus", l_kiwmi_server_unfocus},
     {"verbosity", l_kiwmi_server_verbosity},
     {"view_at", l_kiwmi_server_view_at},
+    {"ws_register", ws_register},
+    {"ws_send", websocket_send_msg},
     {NULL, NULL},
 };
 
