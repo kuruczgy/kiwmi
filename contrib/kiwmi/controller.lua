@@ -29,6 +29,9 @@ local keybinds = {
     d = function(c)
         kiwmi:spawn("wofi --show drun")
     end,
+    l = function(c)
+        kiwmi:spawn("swaylock")
+    end,
 }
 
 Controller = class()

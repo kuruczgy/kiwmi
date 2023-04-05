@@ -140,10 +140,17 @@ to_json(lua_State *L, size_t *len)
 
                     break;
                 }
+
+                if (type == LUA_TNIL) {
+                    // special case: this was an empty table, treat it like an array
+                    stack[stack_len - 1].is_array = true;
+                    GROW(1);
+                    buf[i++] = '[';
+                }
             }
             lua_pop(L, 1);
-            GROW(1);
 
+            GROW(1);
             buf[i++] = stack[stack_len - 1].is_array ? ']' : '}';
             --stack_len;
         }

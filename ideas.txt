@@ -1,6 +1,5 @@
-gui toplevel manager
+tag system?
 
-reorder workspaces
 hide workspaces
 workspace show top k views
 

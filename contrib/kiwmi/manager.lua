@@ -76,8 +76,11 @@ function Manager:ctor()
 
     -- any string is a valid workspace
     self.ws_by_id = {}
+    self.ws_order = {}
 
     self.focused_view_id = nil
+
+    self.state_changed = Signal()
 end
 
 function Manager:add_view(view)
@@ -90,10 +93,6 @@ function Manager:add_view(view)
     }
     self.view_info_by_id[view_id] = view_info
 
-    -- place into a workspace by default
-    local ws_id = self:get_populated_workspace_ids()[0] or "1"
-    self:move_view_to_workspace(view_id, ws_id)
-
     -- set up scene nodes
     local tree = view:scene_tree()
     local color = config.theme.border_color
@@ -103,10 +102,16 @@ function Manager:add_view(view)
         top = tree:add_rect(0, 0, color),
         bottom = tree:add_rect(0, 0, color),
     }
+    print(view_info.border.left, view_id)
+
+    -- place into a workspace by default
+    local ws_id = self.ws_order[#self.ws_order] or "1"
+    self:move_view_to_workspace(view_id, ws_id)
 end
 
 function Manager:focus(view_id)
     local view_info = self.view_info_by_id[view_id]
+    if not view_info then return end -- TODO: special view
 
     if self.focused_view_id then
         local border = self.view_info_by_id[self.focused_view_id].border
@@ -131,16 +136,18 @@ end
 
 function Manager:remove_view(view)
     local view_id = view:id()
-    self:remove_view_from_workspace(view_id)
+    self:_remove_view_from_workspace(view_id)
     self.view_by_id[view_id] = nil
     self.view_info_by_id[view_id] = nil
 
     if self.focused_view_id == view_id then
         self.focused_view_id = nil
     end
+
+    self.state_changed:emit()
 end
 
-function Manager:remove_view_from_workspace(view_id)
+function Manager:_remove_view_from_workspace(view_id)
     local view_info = self.view_info_by_id[view_id]
     assert(view_info.ws_id)
 
@@ -151,53 +158,83 @@ end
 
 function Manager:move_view_to_workspace(view_id, ws_id)
     local view_info = self.view_info_by_id[view_id]
-    if view_info.ws_id then self:remove_view_from_workspace(view_id) end
+    if view_info.ws_id then self:_remove_view_from_workspace(view_id) end
     view_info.ws_id = ws_id
 
     local ws = self.ws_by_id[ws_id]
     if not ws then
+        -- create new ws
         ws = {
             -- order matters
             view_ids = {}
         }
         self.ws_by_id[ws_id] = ws
+        self.ws_order[#self.ws_order + 1] = ws_id
     end
 
     ws.view_ids[#ws.view_ids + 1] = view_id
+
+    self.state_changed:emit()
 end
 
 function Manager:export_layout_state()
-    local ls = {
-        workspaces = {}
+    local state = {
+        workspaces = {},
+        outputs = {}
     }
-    for ws_id, ws in pairs(self.ws_by_id) do
-        local workspace = { views = {} }
-        for i, view_id in ipairs(ws.view_ids) do
-            workspace.views[i] = view_id
+    for i, ws_id in ipairs(self.ws_order) do
+        local workspace = { id = ws_id, views = {} }
+        for j, view_id in ipairs(self.ws_by_id[ws_id].view_ids) do
+            workspace.views[j] = tostring(view_id)
         end
-        ls.workspaces[ws_id] = workspace
+        state.workspaces[i] = workspace
     end
-    return ls
+
+    local views = {}
+    for view_id, view in pairs(self.view_by_id) do
+        views[tostring(view_id)] = {
+            title = view:title()
+        }
+    end
+
+    for i, output_name in ipairs(self.output_names_ordered) do
+        local output_info = self.output_info_by_name[output_name]
+        state.outputs[i] = {
+            name = output_name,
+            max_views = output_info.max_views
+        }
+    end
+
+    return { state = state, views = views }
 end
 
-function Manager:import_layout_state(ls)
+function Manager:import_layout_state(state)
     for _, view_info in pairs(self.view_info_by_id) do
         view_info.ws_id = nil
     end
 
     self.ws_by_id = {}
-    for ws_id, ws in pairs(ls.workspaces) do
+    self.ws_order = {}
+    for i, ws in ipairs(state.workspaces) do
         local view_ids = {}
         for _, view_id in ipairs(ws.views) do
+            local view_id = tonumber(view_id)
             if self.view_info_by_id[view_id] then
-                self.view_info_by_id[view_id].ws_id = ws_id
+                self.view_info_by_id[view_id].ws_id = ws.id
                 view_ids[#view_ids + 1] = view_id
             end
         end
-        self.ws_by_id[ws_id] = { view_ids = view_ids }
+        self.ws_by_id[ws.id] = { view_ids = view_ids }
+        self.ws_order[i] = ws.id
     end
 
-    self:arrange_views()
+    for i, output_info in ipairs(state.outputs) do
+        self.output_info_by_name[output_info.name] = {
+            max_views = output_info.max_views
+        }
+    end
+
+    self.state_changed:emit()
 end
 
 function Manager:workspace_of_view(view_id)
@@ -232,6 +269,8 @@ function Manager:add_output(output)
         if not ib then return true end
         return ia < ib
     end)
+
+    self.state_changed:emit()
 end
 
 function Manager:remove_output(output)
@@ -241,20 +280,15 @@ function Manager:remove_output(output)
 
     local idx = table.find(self.output_names_ordered, name)
     table.remove(self.output_names_ordered, idx)
-end
 
-function Manager:get_populated_workspace_ids()
-    local keys = {}
-    for k, _ in pairs(self.ws_by_id) do
-        keys[#keys + 1] = k
-    end
-    table.sort(keys)
-    return keys
+    self.state_changed:emit()
 end
 
 function Manager:rotate_workspace(ws_id, top_k)
     local view_ids = self.ws_by_id[ws_id].view_ids
     table.insert(view_ids, 1, table.remove(view_ids, top_k))
+
+    self.state_changed:emit()
 end
 
 function Manager:adjust_output_max_views(output, n)
@@ -262,6 +296,8 @@ function Manager:adjust_output_max_views(output, n)
     output_info.max_views = output_info.max_views + n
     if output_info.max_views < 1 then output_info.max_views = 1 end
     if output_info.max_views > 8 then output_info.max_views = 8 end
+
+    self.state_changed:emit()
 end
 
 function Manager:arrange_views()
@@ -279,13 +315,13 @@ function Manager:arrange_views()
         end
         l[#l + 1] = view_id
 
-        local view_info = self.view_info_by_id[view_id]
-        local view = self.view_by_id[view_id]
-        view:set_debug_text(string.format("workspace %s\noutput %d (max: %d)", view_info.ws_id or "(none)", output_i,
-            l.max))
+        -- local view_info = self.view_info_by_id[view_id]
+        -- local view = self.view_by_id[view_id]
+        -- view:set_debug_text(string.format("workspace %s\noutput %d (max: %d)", view_info.ws_id or "(none)", output_i,
+        --     l.max))
     end
 
-    for _, ws_id in ipairs(self:get_populated_workspace_ids()) do
+    for _, ws_id in ipairs(self.ws_order) do
         local ws = self.ws_by_id[ws_id]
         for _, view_id in ipairs(ws.view_ids) do
             insert_view(view_id)

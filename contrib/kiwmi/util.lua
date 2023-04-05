@@ -87,3 +87,23 @@ function Vec:ctor(x, y)
     self.x = x
     self.y = y
 end
+
+Signal = class()
+
+function Signal:ctor()
+    self.subscribers = {}
+end
+
+function Signal:subscribe(f)
+    self.subscribers[f] = true
+end
+
+function Signal:unsubscribe(f)
+    self.subscribers[f] = nil
+end
+
+function Signal:emit(...)
+    for f, _ in pairs(self.subscribers) do
+        f(...)
+    end
+end
