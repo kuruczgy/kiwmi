@@ -50,6 +50,7 @@ to_json(lua_State *L, size_t *len)
     if (i + (space) >= cap)                                                    \
         cap = (cap + space) * 1.5, buf = realloc(buf, cap);
 
+    // TODO: check for overflow of this stack
     struct {
         size_t len, index;
         bool is_array;
@@ -247,6 +248,8 @@ done_message(
             wlr_log(WLR_ERROR, "%s", lua_tostring(ctx->L, -1));
             lua_pop(ctx->L, 1);
         }
+    } else {
+        wlr_log(WLR_ERROR, "%s: %s", __func__, "no recv_ref, ignoring message");
     }
 
     // pss->recv_len = 0;
@@ -440,8 +443,14 @@ cb_main(
         // printf("fragment: %.*s\n", (int)len, (const char *)in);
 
         if (!pss->json_parse.rejected) {
-            if (lejp_parse(&pss->json_parse.lejp_ctx, in, len) < 0) {
+            int reason = lejp_parse(&pss->json_parse.lejp_ctx, in, len);
+            if (reason < 0 && reason != LEJP_CONTINUE) {
                 pss->json_parse.rejected = true;
+                wlr_log(
+                    WLR_ERROR,
+                    "%s: json parsing failed: %d, ignoring",
+                    __func__,
+                    reason);
             }
         }
         // append_message_fragment(pss, in, len, remaining);
@@ -721,6 +730,7 @@ websocket_init(struct lua_State *L, struct wl_event_loop *event_loop)
         .gid              = -1,
         .uid              = -1,
         .user             = ctx,
+        .iface            = "127.0.0.1",
         .port             = 8000,
         .protocols        = protocols,
         .event_lib_custom = &evlib_custom,
