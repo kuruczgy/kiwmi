@@ -83,13 +83,15 @@ function Manager:ctor()
     self.state_changed = Signal()
 end
 
-function Manager:add_view(view)
+function Manager:add_view(view, tags)
     local view_id = view:id()
     self.view_by_id[view_id] = view
 
     local view_info = {
         -- nil means not displayed
-        ws_id = nil
+        ws_id = nil,
+        -- set of string tags
+        tags = tags or {}
     }
     self.view_info_by_id[view_id] = view_info
 
@@ -105,13 +107,12 @@ function Manager:add_view(view)
     print(view_info.border.left, view_id)
 
     -- place into a workspace by default
-    local ws_id = self.ws_order[#self.ws_order] or "1"
+    local ws_id = "def"
     self:move_view_to_workspace(view_id, ws_id)
 end
 
 function Manager:focus(view_id)
     local view_info = self.view_info_by_id[view_id]
-    if not view_info then return end -- TODO: special view
 
     if self.focused_view_id then
         local border = self.view_info_by_id[self.focused_view_id].border
@@ -157,6 +158,7 @@ function Manager:_remove_view_from_workspace(view_id)
 end
 
 function Manager:move_view_to_workspace(view_id, ws_id)
+    print('move_view_to_workspace', view_id, ws_id)
     local view_info = self.view_info_by_id[view_id]
     if view_info.ws_id then self:_remove_view_from_workspace(view_id) end
     view_info.ws_id = ws_id
@@ -166,7 +168,9 @@ function Manager:move_view_to_workspace(view_id, ws_id)
         -- create new ws
         ws = {
             -- order matters
-            view_ids = {}
+            view_ids = {},
+            -- show top k views, all if -1
+            top_k = -1,
         }
         self.ws_by_id[ws_id] = ws
         self.ws_order[#self.ws_order + 1] = ws_id
@@ -180,14 +184,28 @@ end
 function Manager:export_layout_state()
     local state = {
         workspaces = {},
-        outputs = {}
+        outputs = {},
+        views = {},
     }
     for i, ws_id in ipairs(self.ws_order) do
-        local workspace = { id = ws_id, views = {} }
-        for j, view_id in ipairs(self.ws_by_id[ws_id].view_ids) do
+        local ws = self.ws_by_id[ws_id]
+        local workspace = { id = ws_id, top_k = ws.top_k, views = {} }
+        for j, view_id in ipairs(ws.view_ids) do
             workspace.views[j] = tostring(view_id)
         end
         state.workspaces[i] = workspace
+    end
+    for i, output_name in ipairs(self.output_names_ordered) do
+        local output_info = self.output_info_by_name[output_name]
+        state.outputs[i] = {
+            name = output_name,
+            max_views = output_info.max_views
+        }
+    end
+    for view_id, view_info in pairs(self.view_info_by_id) do
+        state.views[tostring(view_id)] = {
+            tags = view_info.tags,
+        }
     end
 
     local views = {}
@@ -197,15 +215,7 @@ function Manager:export_layout_state()
         }
     end
 
-    for i, output_name in ipairs(self.output_names_ordered) do
-        local output_info = self.output_info_by_name[output_name]
-        state.outputs[i] = {
-            name = output_name,
-            max_views = output_info.max_views
-        }
-    end
-
-    return { state = state, views = views }
+    return { state = state, aux = { views = views } }
 end
 
 function Manager:import_layout_state(state)
@@ -224,14 +234,17 @@ function Manager:import_layout_state(state)
                 view_ids[#view_ids + 1] = view_id
             end
         end
-        self.ws_by_id[ws.id] = { view_ids = view_ids }
+        self.ws_by_id[ws.id] = { view_ids = view_ids, top_k = ws.top_k }
         self.ws_order[i] = ws.id
     end
-
     for i, output_info in ipairs(state.outputs) do
         self.output_info_by_name[output_info.name] = {
             max_views = output_info.max_views
         }
+    end
+    for view_id, view_info in pairs(state.views) do
+        view_id = tonumber(view_id)
+        self.view_info_by_id[view_id].tags = view_info.tags
     end
 
     self.state_changed:emit()
@@ -239,6 +252,14 @@ end
 
 function Manager:workspace_of_view(view_id)
     return self.view_info_by_id[view_id].ws_id
+end
+
+function Manager:views_with_tag(tag)
+    local res = {}
+    for view_id, view_info in pairs(self.view_info_by_id) do
+        if view_info.tags[tag] then res[#res + 1] = view_id end
+    end
+    return res
 end
 
 function Manager:add_output(output)
@@ -286,7 +307,11 @@ end
 
 function Manager:rotate_workspace(ws_id, top_k)
     local view_ids = self.ws_by_id[ws_id].view_ids
-    table.insert(view_ids, 1, table.remove(view_ids, top_k))
+    if top_k > #view_ids then top_k = #view_ids end
+
+    local view_id = table.remove(view_ids, top_k)
+    table.insert(view_ids, 1, view_id)
+    self:focus(view_id)
 
     self.state_changed:emit()
 end
@@ -323,8 +348,22 @@ function Manager:arrange_views()
 
     for _, ws_id in ipairs(self.ws_order) do
         local ws = self.ws_by_id[ws_id]
-        for _, view_id in ipairs(ws.view_ids) do
-            insert_view(view_id)
+        for i, view_id in ipairs(ws.view_ids) do
+            if ws.top_k ~= -1 and i > ws.top_k then
+                self.view_by_id[view_id]:hide()
+            else
+                local view_info = self.view_info_by_id[view_id]
+                if not view_info.tags['panel'] then
+                    insert_view(view_id)
+                end
+            end
+        end
+
+        local empty = #ws.view_ids == 0 or ws.top_k == 0
+
+        -- Go to next output
+        if not empty and output_i < #self.output_names_ordered then
+            output_i = output_i + 1
         end
 
         -- Skip to next output if only one slot remains
@@ -367,6 +406,8 @@ function Manager:arrange_views()
 
             border.bottom:set_size(size.x + 2 * th, th)
             border.bottom:set_position(-th, size.y)
+
+            view:show()
         end
     end
 end

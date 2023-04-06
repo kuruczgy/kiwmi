@@ -1,7 +1,25 @@
-tag system?
 
-hide workspaces
-workspace show top k views
+different layouts (maybe per workspace?)
 
-fullscreen mode
+quick workspace swap
 
+quick workspace switching on single output
+
+find a better launcher
+- don't wanna do it through the websocket, seems a tad insecure
+
+quick recall for various different clients
+- pavucontrol
+
+ui:
+- schematic output layout UI
+- highlight active view
+
+
+compositor:
+- fix shutdown segfault
+- fullscreen mode (for youtube videos) -> first step is to ack all xdg toplevel requests
+- output power
+- drag-and-drop
+- 144 fps output
+- non-flickery layout arrange

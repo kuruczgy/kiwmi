@@ -1,5 +1,5 @@
-local watch = os.getenv("KIWMI_EMBED")
-local mod_key = watch and "alt" or "super"
+local embed = os.getenv("KIWMI_EMBED")
+local mod_key = embed and "alt" or "super"
 
 local manager
 local controller
@@ -78,45 +78,23 @@ kiwmi:on("output", function(output)
     end)
 end)
 
-
-local special_view = nil
-local function set_special_view_visible(visible)
-    if not special_view then return end
-    if visible then
-        local output = manager.output_by_name[manager.output_names_ordered[1]]
-        local usable_area = output:usable_area()
-        local output_pos = Vec(output:pos()) + Vec(usable_area)
-        local output_size = Vec(usable_area.width, usable_area.height)
-
-        local factor = Vec(0.8, 0.8)
-
-        local pos = output_pos + output_size * (factor * -1 + 1) * 0.5
-        local size = output_size * factor
-
-        special_view:move(pos.x, pos.y)
-        special_view:resize(size.x, size.y)
-
-        special_view:show()
-        special_view:focus()
-    else
-        special_view:hide()
-    end
-end
-
 kiwmi:on("view", function(view)
-    local special = view:title() == 'Kiwmi Panel'
+    local tags = {}
 
-    if not special then
-        manager:add_view(view)
-        view:csd(false)
-        view:tiled(true)
-        view:on("destroy", function(view)
-            manager:remove_view(view)
-        end)
-    else
-        special_view = view
-        special_view:hide()
+    -- TODO: some better abstraction for auto-tagging
+    if view:title() == 'Kiwmi Panel' then tags.panel = 1 end
+
+    manager:add_view(view, tags)
+
+    view:csd(false)
+    view:tiled(true)
+    if tags.panel then
+        view:hide()
     end
+
+    view:on("destroy", function(view)
+        manager:remove_view(view)
+    end)
 
     view:on("request_move", function()
         view:imove()
@@ -129,8 +107,6 @@ end)
 
 local global_keyboard = nil
 
-local alt_tab_down = false
-
 kiwmi:on("keyboard", function(keyboard)
     global_keyboard = keyboard
     keyboard:on("key_down", function(ev)
@@ -142,30 +118,23 @@ kiwmi:on("keyboard", function(keyboard)
             return true
         end
 
-        if mods['alt'] and ev.key == 'Tab' then
-            alt_tab_down = true
-            set_special_view_visible(true)
-            return true
-        end
-
         return controller:key_down(ev, mods)
     end)
     keyboard:on("key_up", function(ev)
         if not ev.raw then return end
 
-        -- (ev.key == 'Alt_L' or ev.key == 'Alt_R')
-        if alt_tab_down and ev.key == 'Tab' then
-            set_special_view_visible(false)
-            alt_tab_down = false
-            return true
-        end
+        local mods = ev.keyboard:modifiers()
+        return controller:key_up(ev, mods)
     end)
 end)
 
 cursor:on("button_down", function(id)
-    if alt_tab_down then return end
     if global_keyboard and global_keyboard:modifiers()[mod_key] then
         local view = cursor:view_at_pos()
+        local view_info = manager.view_info_by_id[view:id()]
+        if view_info.tags.panel then
+            return
+        end
 
         if view then
             if id == 1 then view:imove() end
@@ -178,7 +147,8 @@ end)
 
 reload()
 
-if not watch then
+kiwmi:spawn("gtk-launch kiwmi-panel")
+if not embed then
     -- kiwmi:spawn("swaybg -c '#333333'")
     kiwmi:spawn("waybar")
     -- kiwmi:spawn("code --ozone-platform-hint=auto")
@@ -188,5 +158,4 @@ else
     --     kiwmi:spawn(string.format("alacritty -T '%d' -e /bin/sh -c 'echo number: %d; read'", i, i))
     -- end
     -- kiwmi:spawn("chromium --ozone-platform-hint=auto --user-data-dir='/tmp/kiwmi_kiosk' 'http://localhost:3000'")
-    kiwmi:spawn("gtk-launch kiwmi-panel")
 end
