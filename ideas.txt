@@ -17,7 +17,6 @@ ui:
 
 
 compositor:
-- fix shutdown segfault
 - fullscreen mode (for youtube videos) -> first step is to ack all xdg toplevel requests
 - output power
 - drag-and-drop
