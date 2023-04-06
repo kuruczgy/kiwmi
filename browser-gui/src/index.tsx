@@ -1,12 +1,19 @@
-import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import './index.css'
+import './index.scss'
 import App from './App'
-import reportWebVitals from './reportWebVitals'
-import NumberSelector from './components/NumberSelector'
 import * as serviceWorkerRegistration from './serviceWorkerRegistration'
 
-const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
+const rootElement = document.getElementById('root') as HTMLElement
+// rootElement.addEventListener(
+//   'mousedown',
+//   (e) => {
+//     ;(e.metaKey as any) = false
+//     e.
+//   },
+//   { capture: true },
+// )
+
+const root = ReactDOM.createRoot(rootElement)
 
 const Frame = ({ children }: { children: any }) => {
   return <div className="main">{children}</div>

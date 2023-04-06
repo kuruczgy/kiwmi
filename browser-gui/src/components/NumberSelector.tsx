@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import styles from './NumberSelector.module.scss'
 
-const NumberSelector = ({
+export const NumberSelector = ({
   value,
   onChange,
   label,
@@ -15,7 +15,7 @@ const NumberSelector = ({
       className={styles.container}
       onWheel={(ev) => onChange(value - Math.sign(ev.deltaY))}
     >
-      <span>{label}</span>
+      <div className={styles.label}>{label}</div>
       <div className={styles.control}>
         {/* https://graphicdesign.stackexchange.com/a/74279 */}
         <button onClick={() => onChange(value - 1)}>&minus;</button>
@@ -25,5 +25,3 @@ const NumberSelector = ({
     </div>
   )
 }
-
-export default NumberSelector

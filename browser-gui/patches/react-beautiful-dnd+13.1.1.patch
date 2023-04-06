@@ -1,0 +1,27 @@
+diff --git a/node_modules/react-beautiful-dnd/dist/react-beautiful-dnd.esm.js b/node_modules/react-beautiful-dnd/dist/react-beautiful-dnd.esm.js
+index ecced69..645e65d 100644
+--- a/node_modules/react-beautiful-dnd/dist/react-beautiful-dnd.esm.js
++++ b/node_modules/react-beautiful-dnd/dist/react-beautiful-dnd.esm.js
+@@ -5764,7 +5764,7 @@ function useMouseSensor(api) {
+           return;
+         }
+ 
+-        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
++        if (event.ctrlKey || event.shiftKey) {
+           return;
+         }
+ 
+diff --git a/node_modules/react-beautiful-dnd/src/view/use-sensor-marshal/sensors/use-mouse-sensor.js b/node_modules/react-beautiful-dnd/src/view/use-sensor-marshal/sensors/use-mouse-sensor.js
+index cf49cf2..e97334c 100644
+--- a/node_modules/react-beautiful-dnd/src/view/use-sensor-marshal/sensors/use-mouse-sensor.js
++++ b/node_modules/react-beautiful-dnd/src/view/use-sensor-marshal/sensors/use-mouse-sensor.js
+@@ -224,7 +224,8 @@ export default function useMouseSensor(api: SensorAPI) {
+         }
+ 
+         // Do not start a drag if any modifier key is pressed
+-        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
++        // in src
++        if (event.ctrlKey || event.shiftKey) {
+           return;
+         }
+ 

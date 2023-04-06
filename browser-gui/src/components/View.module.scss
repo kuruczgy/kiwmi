@@ -1,0 +1,93 @@
+.view {
+  background-color: rgb(87, 87, 87);
+
+  border-radius: 10px;
+
+  //   aspect-ratio: 1.77;
+  height: 100px;
+
+  // https://www.joshwcomeau.com/css/designing-shadows/
+  box-shadow: 2px 4px 4px hsl(0deg 0% 0% / 0.1);
+
+  text-align: center;
+
+  margin-bottom: 10px;
+
+  > :nth-child(1) {
+    height: 25px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+
+    margin: 0px 5px;
+
+    color: white;
+  }
+  > .tags {
+    height: 25px;
+    line-height: 25px;
+
+    display: flex;
+    position: relative;
+    justify-content: center;
+    gap: 5px;
+    overflow: hidden;
+
+    > * {
+      background-color: rgb(53, 53, 53);
+      color: rgb(189, 189, 189);
+    }
+    > :not(:last-child) {
+      &:hover {
+        background-color: rgb(126, 0, 0);
+        cursor: pointer;
+      }
+    }
+    > :last-child {
+      height: 100%;
+
+      &:focus {
+        text-align: left;
+        min-width: 40px;
+        cursor: text;
+      }
+      &:not(:focus) {
+        position: absolute;
+        border: rgb(189, 189, 189) 1px solid;
+        box-sizing: border-box;
+        border-radius: 50%;
+        aspect-ratio: 1;
+        right: 3px;
+        text-align: center;
+        cursor: default;
+        &::before {
+          content: '+';
+        }
+        &:hover {
+          background-color: rgb(100, 100, 100);
+        }
+      }
+    }
+    > button:last-child {
+      height: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: none;
+      position: absolute;
+      right: 3px;
+
+      background-color: rgb(60, 60, 60);
+      color: rgb(189, 189, 189);
+      font-weight: bold;
+
+      &:hover,
+      &:active {
+        background-color: rgb(100, 100, 100);
+      }
+
+      &:active {
+        filter: invert(100%);
+      }
+    }
+  }
+}
